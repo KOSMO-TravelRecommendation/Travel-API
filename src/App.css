@@ -1,0 +1,54 @@
+/* 전체 레이아웃 */
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: #f9f9f9;
+}
+
+/* 헤더 */
+header {
+  background-color: #4CAF50;
+  color: white;
+  padding: 20px;
+  text-align: center;
+  font-size: 24px;
+  font-weight: bold;
+  width: 100%;
+  position: fixed;
+  top: 0;
+  z-index: 1000;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+/* 메인 레이아웃 */
+.main-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  padding: 20px;
+  gap: 40px;
+}
+
+/* 화살표 */
+.arrow {
+  font-size: 50px;
+  color: #4CAF50;
+  margin: 0 20px;
+}
+
+/* 상태 메시지 */
+.status-message {
+  text-align: center;
+  margin-top: 10px;
+}
+
+.status-message.success {
+  color: green;
+}
+
+.status-message.error {
+  color: red;
+}
+
