@@ -1,53 +1,114 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
 const SurveyHandler = () => {
   const [surveyData, setSurveyData] = useState(null);
   const [error, setError] = useState(null);
 
-  // Survey 데이터를 받는 API 엔드포인트
+  // HTML 파일의 surveyQuestions 순서와 동일하게 맞춤
+  const questions = [
+    "여행 지역",
+    "성별",
+    "연령대",
+    "동반자 수",
+    "여행 스타일",
+    "여행 기간",
+    "이동수단",
+    "여행 예산"
+  ];
+
   const fetchSurveyData = async () => {
     try {
       const response = await axios.get('http://localhost:8080/api/survey/latest');
       setSurveyData(response.data);
       setError(null);
     } catch (err) {
-      setError('Failed to fetch survey data');
+      setError('설문 데이터를 가져오는데 실패했습니다');
       console.error('Error fetching survey data:', err);
     }
   };
 
-  // 컴포넌트가 마운트될 때 데이터 가져오기
-  React.useEffect(() => {
+  useEffect(() => {
     fetchSurveyData();
   }, []);
 
+  const containerStyle = {
+    maxWidth: '600px',
+    margin: '1rem auto',
+    padding: '1rem',
+    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+    borderRadius: '8px',
+    backgroundColor: 'white'
+  };
+
+  const headerStyle = {
+    textAlign: 'center',
+    marginBottom: '1.5rem',
+    padding: '1rem',
+    borderBottom: '1px solid #eee'
+  };
+
+  const errorStyle = {
+    backgroundColor: '#fee2e2',
+    border: '1px solid #ef4444',
+    color: '#dc2626',
+    padding: '0.75rem',
+    borderRadius: '4px',
+    marginBottom: '1rem'
+  };
+
+  const questionContainerStyle = {
+    marginBottom: '1rem',
+    paddingBottom: '0.5rem',
+    borderBottom: '1px solid #eee'
+  };
+
+  const questionLabelStyle = {
+    fontWeight: '600',
+    color: '#374151',
+    marginBottom: '0.25rem'
+  };
+
+  const answerStyle = {
+    color: '#6b7280'
+  };
+
+  const loadingStyle = {
+    textAlign: 'center',
+    padding: '2rem',
+    color: '#6b7280'
+  };
+
   return (
-    <div className="p-6">
-      <h2 className="text-2xl font-bold mb-4">설문 결과</h2>
+    <div style={containerStyle}>
+      <div style={headerStyle}>
+        <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>설문 결과</h2>
+      </div>
       
       {error && (
-        <div className="bg-red-100 text-red-700 p-4 rounded mb-4">
+        <div style={errorStyle}>
           {error}
         </div>
       )}
-      
-      {surveyData && (
-        <div className="bg-white shadow rounded-lg p-6">
-          <h3 className="text-lg font-semibold mb-4">최신 설문 응답</h3>
-          <div className="space-y-4">
-            {surveyData.inputs?.map((answer, index) => (
-              <div key={index} className="border-b pb-2">
-                <p className="font-medium">질문 {index + 1}</p>
-                <p className="text-gray-600">{answer}</p>
-              </div>
-            ))}
-          </div>
+
+      {surveyData && surveyData.inputs && (
+        <div>
+          <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '1rem' }}>
+            최신 설문 응답
+          </h3>
+          {surveyData.inputs.map((answer, index) => (
+            <div key={index} style={questionContainerStyle}>
+              <p style={questionLabelStyle}>{questions[index]}</p>
+              <p style={answerStyle}>
+                {answer}
+              </p>
+            </div>
+          ))}
         </div>
       )}
-      
+
       {!surveyData && !error && (
-        <div className="text-gray-500">
+        <div style={loadingStyle}>
           AI 분석중...
         </div>
       )}
