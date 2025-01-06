@@ -45,7 +45,7 @@ REGION_MODEL_MAPPING = {
     "경남": "East_model",
     "경북": "East_model",
     "강원": "East_model",
-    "제주": "Jeju_model",
+    "제주도": "Jeju_model",
 }
 
 # 모델 로드 및 특성 이름 확인
