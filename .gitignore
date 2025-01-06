@@ -434,3 +434,6 @@ Server/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+#model files
+/flask/models/
