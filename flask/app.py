@@ -80,7 +80,7 @@ def transform_input(input_data):
         f"GENDER_{input_data['GENDER'][0]}": 1,
         "AGE_GRP": input_data["AGE_GRP"][0],
         "TRAVEL_COMPANIONS_NUM": input_data["TRAVEL_COMPANIONS_NUM"][0],
-        f"TRAVEL_PURPOSE_{input_data['TRAVEL_PURPOSE'][0]}": 1,
+        f"TRAVEL_MOTIVES{input_data['TRAVEL_MOTIVES'][0]}": 1,
         "Date": input_data["Date"][0],
         "MVMN_SE_NM": input_data["MVMN_SE_NM"][0],
         "PAYMENT_AMT_WON": input_data["PAYMENT_AMT_WON"][0],

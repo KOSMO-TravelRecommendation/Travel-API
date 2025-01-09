@@ -26,7 +26,7 @@ const SurveyHandler = () => {
         GENDER: [mapGenderGroup(inputs[1])],
         AGE_GRP: [mapAgeGroup(inputs[2])],
         TRAVEL_COMPANIONS_NUM: [mapCompanionCount(inputs[3])],
-        TRAVEL_PURPOSE: [mapTravelPurpose(inputs[4])],
+        TRAVEL_MOTIVES: [mapTravelMotive(inputs[4])],
         Date: [mapTravelDuration(inputs[5])],
         MVMN_SE_NM: [mapTransport(inputs[6])],
         PAYMENT_AMT_WON: [mapBudget(inputs[7])],
@@ -60,14 +60,13 @@ const SurveyHandler = () => {
   };
 
 // 여행 스타일 변환 함수
-const mapTravelPurpose = (style) => {
+const mapTravelMotive = (style) => {
   const styles = {
-    "쇼핑": 1,"테마파크": 2,"놀이시설": 3,"동/식물원 방문": 4,"역사 유적지 방문": 5,
-    "시티투어": 6,"야외 스포츠": 7,"레포츠 활동": 8,"지역 문화예술/공연/전시시설 관람": 9,
-    "유흥/오락(나이트라이프)": 10,"캠핑": 11,"지역 축제/이벤트 참가": 12,"온천/스파": 13,
-    "교육/체험 프로그램 참가": 14,"드라마 촬영지 방문": 15,"종교/성지 순례": 16,"Well-ness 여행": 17,
-    "SNS 인생샷 여행": 18,"호캉스 여행": 19,"신규 여행지 발굴": 20,"반려동물 동반 여행": 21,
-    "인플루언서 따라하기 여행": 22, "친환경 여행(플로깅 여행)": 23,"등반 여행": 24,
+    "일상에서 벗어나 새로운 환경을 즐기는 여행": 1,"휴식을 통해 몸과 마음을 회복하는 여행": 2,
+    "여행 메이트와 추억을 쌓고 유대감을 키우는 여행": 3,"자신을 돌아보고 진정한 자아를 찾는 여행": 4,
+    "SNS에 공유하며 특별한 순간을 남기는 여행": 5, "운동과 건강을 챙기며 활력을 얻는 여행": 6,
+    "새롭고 신나는 경험을 찾아 떠나는 여행": 7,"역사와 문화를 배우며 탐방하는 여행": 8,
+    "특별한 목적을 위한 기념 여행 (칠순, 신혼, 수학여행 등)": 9 , "기타, 나만의 특별한 여행 스타일" : 10
   };
 
   // 스타일이 문자열이면 세미콜론으로 구분하여 처리
