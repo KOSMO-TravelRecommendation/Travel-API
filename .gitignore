@@ -437,3 +437,4 @@ yarn-error.log*
 
 #model files
 /flask/models/
+/flask/data/
