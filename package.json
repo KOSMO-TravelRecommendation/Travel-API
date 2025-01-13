@@ -4,6 +4,7 @@
   "private": true,
   "dependencies": {
     "axios": "^1.7.9",
+    "bootstrap": "^5.3.3",
     "card": "^2.5.4",
     "cra-template": "1.2.0",
     "flask": "^0.2.10",

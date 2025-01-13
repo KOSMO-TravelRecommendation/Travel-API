@@ -68,14 +68,8 @@ def load_region_data():
             logger.info(f"Loading file: {file_path}")
             
             df = pd.read_csv(file_path, encoding='utf-8')
-            
-            # 주소에서 시도 정보 추출 (NaN 값 안전하게 처리)
             df['SIDO'] = df['LOTNO_ADDR'].fillna('').str.split().str[0]
-            
-            # 관광지 타입 필터링 (1-8)
             df = df[df['VISIT_AREA_TYPE_CD'].isin(range(1, 9))]
-            
-            # 중복 제거: 같은 관광지명은 하나만 유지
             df = df.sort_values('VISIT_AREA_TYPE_CD').drop_duplicates(
                 subset=['VISIT_AREA_NM'], 
                 keep='first'
@@ -84,63 +78,100 @@ def load_region_data():
             df['REGION'] = region
             all_data.append(df)
             logger.info(f"Loaded data for region {region}")
-            logger.debug(f"Columns in file: {df.columns.tolist()}")
             
         except Exception as e:
             logger.error(f"Error loading data for {region}: {e}")
             raise
             
     combined_data = pd.concat(all_data, ignore_index=True)
-    
-    # 전체 데이터에서도 한번 더 중복 제거 (다른 region에 같은 이름의 장소가 있을 수 있음)
     combined_data = combined_data.sort_values('VISIT_AREA_TYPE_CD').drop_duplicates(
         subset=['VISIT_AREA_NM'], 
         keep='first'
     )
     
-    logger.info(f"Final combined data shape after deduplication: {combined_data.shape}")
+    logger.info(f"Final combined data shape: {combined_data.shape}")
     return combined_data
 
 def calculate_weights(survey_data):
-    """사용자 선호도에 따른 가중치 계산"""
+    """개선된 사용자 선호도 가중치 계산"""
     try:
         weights = {}
         
-        # 자연 관광지 (type 1, 2)
-        nature_weight = (float(survey_data.get('nature_rating', 3)) / 5.0) * 1.2
-        weights.update({1: nature_weight, 2: nature_weight})
+        # 기본 선호도 가중치 강화
+        nature_weight = (float(survey_data.get('nature_rating', 3)) / 5.0) * 2.0
+        culture_weight = (float(survey_data.get('culture_rating', 3)) / 5.0) * 2.0
+        activity_weight = (float(survey_data.get('activity_rating', 3)) / 5.0) * 2.0
         
-        # 문화 관광지 (type 3, 4)
-        culture_weight = (float(survey_data.get('culture_rating', 3)) / 5.0) * 1.2
-        weights.update({3: culture_weight, 4: culture_weight})
+        weights.update({
+            1: nature_weight,   # 자연 관광지
+            2: nature_weight,   # 자연 휴양지
+            3: culture_weight,  # 문화 유적지
+            4: culture_weight,  # 박물관/미술관
+            5: activity_weight, # 체험 관광지
+            6: activity_weight, # 액티비티
+            7: 1.0,            # 쇼핑/맛집
+            8: 1.0             # 기타
+        })
         
-        # 체험 관광지 (type 5, 6)
-        activity_weight = (float(survey_data.get('activity_rating', 3)) / 5.0) * 1.2
-        weights.update({5: activity_weight, 6: activity_weight})
+        # 예산에 따른 가중치 강화
+        budget = survey_data.get('budget', '')
+        if budget:
+            if budget == '10만원 미만':
+                for type_id in [1, 2, 3]:  # 자연, 문화 관광지 선호
+                    weights[type_id] *= 2.0
+                for type_id in [5, 6, 7]:  # 체험, 쇼핑 비선호
+                    weights[type_id] *= 0.5
+            elif budget == '30만원 ~ 50만원':
+                for type_id in [5, 6]:     # 체험/액티비티 선호
+                    weights[type_id] *= 1.8
+            elif budget == '50만원 이상':  
+                for type_id in [5, 6, 7]:  # 프리미엄 경험 선호
+                    weights[type_id] *= 2.0
         
-        # 동반자 유형에 따른 가중치
-        companion_type = survey_data.get('companion_type', '')
+        # 동반자 유형에 따른 가중치 강화
+        companion_type = survey_data.get('companion_type', '').lower()
         if companion_type == '가족':
-            weights[1] *= 1.1  # 가족 동반시 자연 명소 선호
-            weights[5] *= 1.1  # 가족 동반시 체험 관광지 선호
+            weights[1] *= 1.8  # 자연 명소
+            weights[5] *= 1.8  # 체험 관광지
+        elif companion_type == '연인':
+            weights[7] *= 2.0  # 쇼핑/맛집
+            weights[1] *= 1.8  # 자연 명소
+        elif companion_type == '친구':
+            weights[6] *= 2.0  # 액티비티
+            weights[7] *= 1.8  # 쇼핑/맛집
         
-        # 이동수단에 따른 가중치
-        transport = survey_data.get('transport_primary', '')
-        if transport == '대중교통':
-            for type_id in weights:
-                weights[type_id] *= 1.1 if type_id in [3, 4] else 0.9
-        
-        # 연령대에 따른 가중치
+        # 연령대에 따른 가중치 강화
         age_group = survey_data.get('age_group', 0)
         if age_group < 30:
-            weights[5] *= 1.1  # 젊은층 체험 선호
+            weights[5] *= 1.8  # 체험 선호
+            weights[6] *= 1.8  # 액티비티 선호
+            weights[7] *= 1.8  # 쇼핑 선호
         elif age_group > 50:
-            weights[3] *= 1.1  # 장년층 문화 선호
-                
+            weights[3] *= 1.8  # 문화 유적지 선호
+            weights[4] *= 1.8  # 박물관/미술관 선호
+            
         return weights
     except Exception as e:
         logger.error(f"Error calculating weights: {e}")
         raise
+
+def diversify_recommendations(predictions, top_k=5):
+    """추천 결과의 다양성 보장"""
+    type_counts = {}
+    diverse_predictions = []
+    
+    for pred in sorted(predictions, key=lambda x: x['score'], reverse=True):
+        place_type = pred['type']
+        
+        # 각 타입별 최대 개수 제한
+        if type_counts.get(place_type, 0) < 2:  # 각 타입당 최대 2개
+            diverse_predictions.append(pred)
+            type_counts[place_type] = type_counts.get(place_type, 0) + 1
+            
+        if len(diverse_predictions) >= top_k:
+            break
+            
+    return diverse_predictions
 
 # 전역 변수로 모델과 데이터 로드
 try:
@@ -155,7 +186,6 @@ except Exception as e:
 def predict():
     try:
         logger.info("Received prediction request")
-        logger.debug(f"Request data: {request.json}")
         
         if not request.json:
             raise ValueError("No JSON data in request")
@@ -170,7 +200,9 @@ def predict():
         model_type = request.json['model_type']
         
         logger.info(f"Processing prediction for model_type: {model_type}")
-        logger.debug(f"Survey data: {survey_data}")
+        
+        # 개선된 사용자 ID 생성
+        user_id = f"{survey_data.get('gender')}_{survey_data.get('age_group')}_{survey_data.get('companion_type')}_{model_type}_{survey_data.get('travel_motive_primary')}"
         
         # SIDO 확인
         sido = survey_data.get('SIDO')
@@ -182,18 +214,12 @@ def predict():
         if not model:
             raise ValueError(f"Invalid model type: {model_type}")
         
-        # 해당 지역의 관광지 필터링 (SIDO 매칭 로직 개선)
+        # 해당 지역의 관광지 필터링
         sido_pattern = f"{sido}(?:특별시|광역시|특별자치시|특별자치도|도)?"
         region_items = REGION_DATA[
             (REGION_DATA['SIDO'].str.contains(sido_pattern, na=False, regex=True)) &
             (REGION_DATA['VISIT_AREA_TYPE_CD'].isin(range(1, 9)))
         ]
-        
-        # 중복 제거: 같은 관광지명은 하나만 유지
-        region_items = region_items.sort_values('VISIT_AREA_TYPE_CD').drop_duplicates(
-            subset=['VISIT_AREA_NM'], 
-            keep='first'
-        )
         
         if region_items.empty:
             raise ValueError(f"No items found for region: {sido}")
@@ -201,28 +227,43 @@ def predict():
         # 가중치 계산
         weights = calculate_weights(survey_data)
         
-        # 예측 수행 (중복 제거된 데이터 사용)
+        # 예측 수행
         predictions = []
-        seen_places = set()  # 중복 체크를 위한 set
+        seen_places = set()
         
         for _, place in region_items.iterrows():
             place_name = place['VISIT_AREA_NM']
             
-            # 이미 추천된 장소는 건너뛰기
             if place_name in seen_places:
                 continue
                 
             try:
-                base_score = model.predict('new_user', place_name).est
+                # 예측 점수 계산
+                base_score = model.predict(user_id, place_name).est
                 weight = weights.get(place['VISIT_AREA_TYPE_CD'], 1.0)
                 
-                # 추가 가중치: 대중교통 접근성
+                # 선호도 가중치 강화
+                preference_multiplier = 1.0
+                
+                # 여행 동기와 장소 타입 매칭 강화
+                travel_motive = survey_data.get('travel_motive_primary', '').lower()
+                if travel_motive == '자연/풍경 감상' and place['VISIT_AREA_TYPE_CD'] in [1, 2]:
+                    preference_multiplier *= 2.0
+                elif travel_motive == '문화/역사 체험' and place['VISIT_AREA_TYPE_CD'] in [3, 4]:
+                    preference_multiplier *= 2.0
+                elif travel_motive == '체험/액티비티' and place['VISIT_AREA_TYPE_CD'] in [5, 6]:
+                    preference_multiplier *= 2.0
+                elif travel_motive == '쇼핑' and place['VISIT_AREA_TYPE_CD'] == 7:
+                    preference_multiplier *= 2.0
+                
+                # 이동수단 접근성 강화
                 if survey_data.get('transport_primary') == '대중교통':
                     location = str(place['LOTNO_ADDR']).lower()
                     if '역' in location or '터미널' in location:
-                        weight *= 1.1
+                        preference_multiplier *= 1.8
                 
-                final_score = base_score * weight
+                # 최종 점수 계산
+                final_score = base_score * weight * preference_multiplier
                 
                 predictions.append({
                     'place_name': place_name,
@@ -231,7 +272,7 @@ def predict():
                     'score': float(final_score)
                 })
                 
-                seen_places.add(place_name)  # 추천된 장소 기록
+                seen_places.add(place_name)
                 
             except Exception as e:
                 logger.warning(f"Skipping prediction for {place_name}: {e}")
@@ -240,13 +281,22 @@ def predict():
         if not predictions:
             raise ValueError("No valid predictions generated")
         
-        # 상위 5개 추천
-        top_predictions = sorted(predictions, key=lambda x: x['score'], reverse=True)[:5]
-        logger.info(f"Generated {len(top_predictions)} unique recommendations")
+        # 추천 결과 다양성 보장
+        diverse_predictions = diversify_recommendations(predictions)
+        
+        # 점수 정규화 (0-10 범위로)
+        max_score = max(p['score'] for p in diverse_predictions)
+        min_score = min(p['score'] for p in diverse_predictions)
+        score_range = max_score - min_score
+        
+        for p in diverse_predictions:
+            p['score'] = 5 + (p['score'] - min_score) / score_range * 5 if score_range > 0 else 5
+        
+        logger.info(f"Generated {len(diverse_predictions)} diverse recommendations")
         
         return jsonify({
             "status": "success",
-            "recommendations": top_predictions
+            "recommendations": diverse_predictions
         })
         
     except Exception as e:
