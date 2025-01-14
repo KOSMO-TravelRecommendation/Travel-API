@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useLocation } from 'react-router-dom';
+import 'bootstrap/dist/css/bootstrap.min.css';
 
 const SurveyResults = () => {
     const [loading, setLoading] = useState(true);
@@ -102,10 +103,12 @@ const SurveyResults = () => {
 
     if (loading) {
         return (
-            <div className="flex items-center justify-center min-h-screen">
+            <div className="container min-vh-100 d-flex align-items-center justify-content-center">
                 <div className="text-center">
-                    <h2 className="text-xl font-semibold mb-4">AI가 최적의 여행지를 분석중입니다...</h2>
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+                    <h2 className="h4 mb-4">AI가 최적의 여행지를 분석중입니다...</h2>
+                    <div className="spinner-border text-primary" role="status">
+                        <span className="visually-hidden">Loading...</span>
+                    </div>
                 </div>
             </div>
         );
@@ -113,33 +116,43 @@ const SurveyResults = () => {
 
     if (error) {
         return (
-            <div className="max-w-4xl mx-auto p-6">
-                <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">
-                    <strong className="font-bold">오류 발생!</strong>
-                    <p className="block sm:inline"> {error}</p>
+            <div className="container py-5">
+                <div className="alert alert-danger" role="alert">
+                    <h4 className="alert-heading">오류 발생!</h4>
+                    <p className="mb-0">{error}</p>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="max-w-4xl mx-auto p-6">
-            <h1 className="text-3xl font-bold mb-8 text-center">맞춤 여행지 추천 결과</h1>
+        <div className="container py-5">
+            <div className="row">
+                <div className="col-12">
+                    <h1 className="text-center mb-5 display-4">맞춤 여행지 추천 결과</h1>
+                </div>
+            </div>
             
             {recommendations && (
-                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                <div className="row g-4">
                     {recommendations.map((place, index) => (
-                        <div key={index} className="p-4 border rounded-lg shadow-md hover:shadow-lg transition-shadow">
-                            <div className="flex items-center justify-between mb-2">
-                                <h3 className="text-xl font-semibold">{place.place_name}</h3>
-                                <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-sm">
-                                    {place.score.toFixed(1)}점
-                                </span>
+                        <div key={index} className="col-md-6 col-lg-4">
+                            <div className="card h-100 shadow-sm hover-shadow">
+                                <div className="card-body">
+                                    <div className="d-flex justify-content-between align-items-center mb-3">
+                                        <h3 className="card-title h5 mb-0">{place.place_name}</h3>
+                                        <span className="badge bg-primary rounded-pill">
+                                            {place.score.toFixed(1)}점
+                                        </span>
+                                    </div>
+                                    <p className="card-text text-muted small mb-3">
+                                        {place.address}
+                                    </p>
+                                    <span className="badge bg-light text-dark">
+                                        {getPlaceTypeName(place.type)}
+                                    </span>
+                                </div>
                             </div>
-                            <p className="text-gray-600 text-sm mb-2">{place.address}</p>
-                            <span className="inline-block px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded">
-                                {getPlaceTypeName(place.type)}
-                            </span>
                         </div>
                     ))}
                 </div>
@@ -147,5 +160,47 @@ const SurveyResults = () => {
         </div>
     );
 };
+
+// CSS를 추가하여 호버 효과 개선
+const styles = `
+    .hover-shadow {
+        transition: all 0.3s ease-in-out;
+    }
+    
+    .hover-shadow:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+    }
+
+    .card {
+        border: none;
+        border-radius: 10px;
+        background: #fff;
+    }
+
+    .badge {
+        font-weight: 500;
+        padding: 0.5em 1em;
+    }
+
+    .display-4 {
+        font-weight: 600;
+        color: #2c3e50;
+    }
+
+    .text-muted {
+        color: #6c757d !important;
+    }
+
+    .spinner-border {
+        width: 3rem;
+        height: 3rem;
+    }
+`;
+
+// Style 태그를 문서에 추가
+const styleSheet = document.createElement("style");
+styleSheet.innerText = styles;
+document.head.appendChild(styleSheet);
 
 export default SurveyResults;

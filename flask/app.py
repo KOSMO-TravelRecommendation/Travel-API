@@ -184,8 +184,8 @@ def predict():
         
         # 해당 지역의 관광지 필터링 (SIDO 매칭 로직 개선)
         sido_pattern = f"{sido}(?:특별시|광역시|특별자치시|특별자치도|도)?"
-        region_items = REGION_DATA[(
-            REGION_DATA['SIDO'].str.contains(sido_pattern, na=False, regex=True)) &
+        region_items = REGION_DATA[
+            (REGION_DATA['SIDO'].str.contains(sido_pattern, na=False, regex=True)) &
             (REGION_DATA['VISIT_AREA_TYPE_CD'].isin(range(1, 9)))
         ]
         
@@ -221,6 +221,7 @@ def predict():
                     location = str(place['LOTNO_ADDR']).lower()
                     if '역' in location or '터미널' in location:
                         weight *= 1.1
+                
                 final_score = base_score * weight
                 
                 predictions.append({
